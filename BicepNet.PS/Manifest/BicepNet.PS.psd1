@@ -41,6 +41,7 @@
         'Build-BicepNetFile'
         'ConvertTo-BicepNetFile'
         'Export-BicepNetResource'
+        'Export-BicepNetChildResource'
         'Find-BicepNetModule'
         'Get-BicepNetCachePath'
         'Get-BicepNetConfig'

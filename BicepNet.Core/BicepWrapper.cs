@@ -1,20 +1,26 @@
 using Bicep.Core.Analyzers.Linter;
 using Bicep.Core.Analyzers.Linter.ApiVersions;
 using Bicep.Core.Configuration;
+using Bicep.Core.Diagnostics;
 using Bicep.Core.Features;
 using Bicep.Core.FileSystem;
 using Bicep.Core.Modules;
 using Bicep.Core.Registry;
 using Bicep.Core.Registry.Auth;
+using Bicep.Core.Semantics;
 using Bicep.Core.Semantics.Namespaces;
+using Bicep.Core.Text;
 using Bicep.Core.TypeSystem.Az;
 using Bicep.Core.Workspaces;
 using Bicep.LanguageServer.Providers;
+using BicepNet.Core.Azure;
 using BicepNet.Core.Configuration;
 using BicepNet.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Threading;
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Abstractions;
@@ -43,7 +49,7 @@ public static partial class BicepWrapper
     private static readonly IModuleRegistryProvider moduleRegistryProvider;
     private static readonly IModuleDispatcher moduleDispatcher;
     private static readonly IAzResourceTypeLoader azResourceTypeLoader;
-    private static readonly IAzResourceProvider azResourceProvider;
+    private static readonly AzureResourceProvider azResourceProvider;
     private static ILogger? logger;
 
     static BicepWrapper()
@@ -67,8 +73,9 @@ public static partial class BicepWrapper
         moduleDispatcher = new ModuleDispatcher(moduleRegistryProvider);
 
         azResourceTypeLoader = new AzResourceTypeLoader();
-        azResourceProvider = new AzResourceProvider(tokenCredentialFactory);
-        
+        //azResourceProvider = new AzResourceProvider(tokenCredentialFactory);
+        azResourceProvider = new AzureResourceProvider(tokenCredentialFactory, fileResolver, moduleDispatcher, configuration, featureProvider, namespaceProvider, apiVersionProvider, linterAnalyzer);
+
         BicepVersion = FileVersionInfo.GetVersionInfo(typeof(Workspace).Assembly.Location).FileVersion ?? "dev";
         OciCachePath = Path.Combine(featureProvider.CacheRootDirectory, ModuleReferenceSchemes.Oci);
         TemplateSpecsCachePath = Path.Combine(featureProvider.CacheRootDirectory, ModuleReferenceSchemes.TemplateSpecs);
@@ -96,5 +103,59 @@ public static partial class BicepWrapper
             default:
                 throw new ArgumentException("BicepConfigMode not valid!");
         }
+    }
+
+    private static bool LogDiagnostics(ImmutableDictionary<BicepFile,ImmutableArray<IDiagnostic>> diagnosticsByBicepFile)
+    {
+        bool success = true;
+        foreach (var (bicepFile, diagnostics) in diagnosticsByBicepFile)
+        {
+            foreach (var diagnostic in diagnostics)
+            {
+                success = diagnostic.Level != DiagnosticLevel.Error;
+                LogDiagnostic(bicepFile.FileUri, diagnostic, bicepFile.LineStarts);
+            }
+        }
+        return success;
+    }
+
+    private static string GetDiagnosticsOutput(Uri fileUri, IDiagnostic diagnostic, ImmutableArray<int> lineStarts)
+    {
+        var localPath = fileUri.LocalPath;
+        var position = TextCoordinateConverter.GetPosition(lineStarts, diagnostic.Span.Position);
+        var line = position.line;
+        var character = position.character;
+        var level = diagnostic.Level;
+        var code = diagnostic.Code;
+        var message = diagnostic.Message;
+
+        var codeDescription = diagnostic.Uri is null ? string.Empty : $" [{diagnostic.Uri.AbsoluteUri}]";
+
+        return $"{localPath}({line},{character}) : {level} {code}: {message}{codeDescription}";
+    }
+    private static void LogDiagnostic(Uri fileUri, IDiagnostic diagnostic, ImmutableArray<int> lineStarts)
+    {
+        var message = GetDiagnosticsOutput(fileUri, diagnostic, lineStarts);
+
+        switch (diagnostic.Level)
+        {
+            case DiagnosticLevel.Off:
+                break;
+            case DiagnosticLevel.Info:
+                logger?.LogInformation("{message}", message);
+                break;
+            case DiagnosticLevel.Warning:
+                logger?.LogWarning("{message}", message);
+                break;
+            case DiagnosticLevel.Error:
+                logger?.LogError("{message}", message);
+                break;
+            default:
+                break;
+        }
+
+        // Increment counters
+        if (diagnostic.Level == DiagnosticLevel.Warning) { WarningCount++; }
+        if (diagnostic.Level == DiagnosticLevel.Error) { ErrorCount++; }
     }
 }
