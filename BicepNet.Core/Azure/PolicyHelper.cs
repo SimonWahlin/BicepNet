@@ -15,7 +15,18 @@ internal static class PolicyHelper
         return (string)scopeResourceId.ResourceType switch
         {
             "Microsoft.Resources/subscriptions" => throw new NotImplementedException(),
-            "Microsoft.Management/managementGroups" => await ManagementGroupHelper.ListManagementGroupPoliciesAsync(scopeResourceId, armClient, cancellationToken),
+            "Microsoft.Management/managementGroups" => await ManagementGroupHelper.ListManagementGroupPolicyDefinitionsAsync(scopeResourceId, armClient, cancellationToken),
+            "Microsoft.Resources/tenants" => throw new NotImplementedException(),
+            _ => throw new Exception($"Failed to list PolicyDefinitions on scope '{scopeResourceId}' with type '{scopeResourceId.ResourceType}"),
+        };
+    }
+
+    public static async Task<IDictionary<string, JsonElement>> ListPolicySetDefinitionsAsync(ResourceIdentifier scopeResourceId, ArmClient armClient, CancellationToken cancellationToken)
+    {
+        return (string)scopeResourceId.ResourceType switch
+        {
+            "Microsoft.Resources/subscriptions" => throw new NotImplementedException(),
+            "Microsoft.Management/managementGroups" => await ManagementGroupHelper.ListManagementGroupPolicySetDefinitionsAsync(scopeResourceId, armClient, cancellationToken),
             "Microsoft.Resources/tenants" => throw new NotImplementedException(),
             _ => throw new Exception($"Failed to list PolicyDefinitions on scope '{scopeResourceId}' with type '{scopeResourceId.ResourceType}"),
         };

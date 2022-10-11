@@ -82,4 +82,7 @@ if($Version) {
 
 Move-Item "$outPath/Bicep/Microsoft.Extensions.Logging.Abstractions.dll" "$outPath/Module.NetCore/" -ErrorAction 'Ignore'
 
+Remove-Item 'D:\git\github\PSBicep\Source\BicepNet.PS' -Recurse -Force -ErrorAction 'Ignore'
+Copy-Item  $outPath 'D:\git\github\PSBicep\Source' -Recurse -Force -ErrorAction 'Ignore'
+
 Compress-Archive -Path $outPath -DestinationPath "$ProjectRoot/BicepNet.PS.zip" -Force

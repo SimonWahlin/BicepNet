@@ -79,7 +79,7 @@ public class AzureResourceProvider : IAzResourceProvider
         return childType switch
         {
             ChildResourceType.PolicyDefinitions => await PolicyHelper.ListPolicyDefinitionsAsync(resourceIdentifier, armClient, cancellationToken),
-            ChildResourceType.PolicyInitiatives => throw new NotImplementedException(),
+            ChildResourceType.PolicyInitiatives => await PolicyHelper.ListPolicySetDefinitionsAsync(resourceIdentifier, armClient, cancellationToken),
             ChildResourceType.PolicyAssignments => throw new NotImplementedException(),
             ChildResourceType.RoleDefinitions => throw new NotImplementedException(),
             ChildResourceType.RoleAssignments => throw new NotImplementedException(),

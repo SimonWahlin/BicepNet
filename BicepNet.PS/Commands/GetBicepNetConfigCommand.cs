@@ -24,10 +24,7 @@ namespace BicepNet.PS.Commands
 
             // If Scope is not set
             // Set Scope to Default if no Path, otherwise Merged
-            if (Scope == null)
-            {
-                Scope = Path == null ? "Default" : "Merged";
-            }
+            Scope ??= Path == null ? "Default" : "Merged";
 
             if (Path != null && Scope == "Default")
             {

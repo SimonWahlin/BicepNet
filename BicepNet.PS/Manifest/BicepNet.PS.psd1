@@ -4,7 +4,7 @@
     RootModule           = 'Module.NetCore/BicepNet.PS.dll'
 
     # Version number of this module.
-    ModuleVersion        = '2.0.8'
+    ModuleVersion        = '2.0.9'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core')
@@ -60,7 +60,7 @@
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
     PrivateData          = @{
         PSData = @{
-            Prerelease = ''
+            Prerelease = 'beta1'
         } # End of PSData hashtable
 
     } # End of PrivateData hashtable

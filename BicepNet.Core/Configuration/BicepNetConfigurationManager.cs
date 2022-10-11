@@ -129,9 +129,11 @@ public class BicepNetConfigurationManager : IConfigurationManager
         switch (mode)
         {
             case BicepConfigScope.Merged:
-                var fileStream = fileSystem.FileStream.Create(configurationPath, FileMode.Open, FileAccess.Read);
-                string content = BuiltInConfigurationElement.Merge(JsonElementFactory.CreateElement(fileStream)).ToFormattedString();
-                return new BicepConfigInfo(configurationPath, content);
+                using(var fileStream = fileSystem.FileStream.Create(configurationPath, FileMode.Open, FileAccess.Read))
+                {
+                    string content = BuiltInConfigurationElement.Merge(JsonElementFactory.CreateElement(fileStream)).ToFormattedString();
+                    return new BicepConfigInfo(configurationPath, content);
+                }
             case BicepConfigScope.Default:
                 return GetConfigurationInfo();
             case BicepConfigScope.Local:
